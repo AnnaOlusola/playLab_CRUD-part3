@@ -67,15 +67,23 @@ public class HomeController extends Controller {
             return badRequest(addProduct.render(newProductForm));
         }
 
-        // Extract the product from the form object
-        Product newProduct = newProductForm.get();
 
-        // Save to the database via Ebean (remember Product extends Model)
-        newProduct.save();
+        // Extract the product from the form object
+        Product p = newProductForm.get();
+        if (p.getId() == null) {
+            //Save to the database via Ebean (remember Product extends Model)
+            p.save();
+        }
+        //Product already exist so update
+        else if(p.getId() != null) {
+            p.update();
+        }
+
+
 
         // Set a success message in temporary flash
         // for display in return view
-        flash("success", "Product " + newProduct.getName() + " has been created");
+        flash("success", "Product " + p.getName() + " has been created/updated");
 
         // Redirect to the admin home
         return redirect(controllers.routes.HomeController.products());
@@ -88,8 +96,33 @@ public class HomeController extends Controller {
         Product.find.ref(id).delete();
         // Add message to flash session
         flash("success", "Product has been deleted");
-
         // Redirect to products page
         return redirect(routes.HomeController.products());
     }
-}
+        //Update a product by id
+        //called when eit button is pressed
+        @Transactional
+                public Result updateProduct(Long id) {
+
+            Product p;
+            Form<Product> productForm;
+
+            try {
+                //Find the product by id
+                p= Product.find.byId(id);
+
+                //Create a form base on the Product class and fill using p
+                productForm = formFactory.form(Product.class).fill(p);
+            }
+
+            catch (Exception ex){
+                //Display an error message or page
+                return badRequest("error");
+            }
+
+            //Render the updateProduct view - pass form as parameter
+            return ok(addProduct.render(productForm));
+        }
+
+    }
+
